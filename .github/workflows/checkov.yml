@@ -1,0 +1,34 @@
+name: SAST IaC - Checkov
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Checkov
+        run: pip install checkov
+
+      - name: Rodar Checkov no Terraform
+        run: checkov -d infra --framework terraform --output sarif --output-file-path . --soft-fail
+
+      - name: Enviar resultado para a aba Security
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results_sarif.sarif
+          category: checkov
